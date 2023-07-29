@@ -12,6 +12,7 @@ import (
 	"os"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -74,14 +75,14 @@ func deploy() {
 	auth.GasPrice = gasPrice
 
 	// Deploy the contract passing the newly created `auth` and `conn` vars
-	// address, tx, _, err := utils.DeployMessage(auth, conn)
+	address, tx, _, err := utils.DeployERC20Token(auth, conn)
 
-	// if err != nil {
-	// 	log.Fatalf("Failed to deploy new task contract: %v", err)
-	// }
-	// fmt.Printf("Contract pending deploy: 0x%x\n", address)
-	// fmt.Printf("Transaction waiting to be mined: 0x%x\n\n", tx.Hash())
+	if err != nil {
+		log.Fatalf("Failed to deploy new task contract: %v", err)
+	}
+	fmt.Printf("Contract pending deploy: 0x%x\n", address)
+	fmt.Printf("Transaction waiting to be mined: 0x%x\n\n", tx.Hash())
 
-	// time.Sleep(10 * time.Second) // Allow it to be processed by the local node :P
+	time.Sleep(10 * time.Second) // Allow it to be processed by the local node :P
 
 }
