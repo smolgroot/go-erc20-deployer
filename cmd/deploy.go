@@ -32,16 +32,6 @@ var deployCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(deployCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// deployCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// deployCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 func deploy() {
@@ -56,12 +46,13 @@ func deploy() {
 	}
 
 	// Unlock the wallet
-	fmt.Print("Wallet Password: ")
+	fmt.Print("Wallet Password:")
 	bytepw, err := term.ReadPassword(int(syscall.Stdin))
 	if err != nil {
 		os.Exit(1)
 	}
 	pass := string(bytepw)
+	fmt.Print("\n")
 
 	// Init a transactor for our chain
 	// Give the wallet password to sign the tx
@@ -74,15 +65,42 @@ func deploy() {
 	gasPrice, err := conn.SuggestGasPrice(context.Background())
 	auth.GasPrice = gasPrice
 
-	// Deploy the contract passing the newly created `auth` and `conn` vars
-	address, tx, _, err := utils.DeployERC20Token(auth, conn)
+	//
+	fmt.Printf("Are you sure to deploy this ERC20 token contract to the current network (chain ID: %v)  [y/N]", config.ChainId)
+	if askForConfirmation() {
+		// Deploy the contract passing the newly created `auth` and `conn` vars
+		address, tx, _, err := utils.DeployERC20Token(auth, conn)
 
-	if err != nil {
-		log.Fatalf("Failed to deploy new task contract: %v", err)
+		if err != nil {
+			log.Fatalf("Failed to deploy new task contract: %v", err)
+		}
+		fmt.Printf("Contract pending deploy: 0x%x\n", address)
+		fmt.Printf("Transaction waiting to be mined: 0x%x\n\n", tx.Hash())
+
+		time.Sleep(10 * time.Second) // Allow it to be processed by the local node :P
+	} else {
+		fmt.Println("Bye.")
 	}
-	fmt.Printf("Contract pending deploy: 0x%x\n", address)
-	fmt.Printf("Transaction waiting to be mined: 0x%x\n\n", tx.Hash())
 
-	time.Sleep(10 * time.Second) // Allow it to be processed by the local node :P
+}
 
+func askForConfirmation() bool {
+	var response string
+
+	_, err := fmt.Scanln(&response)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	switch strings.ToLower(response) {
+	case "y", "yes":
+		return true
+	case "n", "no":
+		return false
+	case "":
+		return askForConfirmation()
+	default:
+		fmt.Println("I'm sorry but I didn't get what you meant, please type (y)es or (n)o and then press enter:")
+		return askForConfirmation()
+	}
 }
